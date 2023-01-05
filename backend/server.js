@@ -3,7 +3,10 @@ const { use } = require('./routes/usersRoute');
 const dotenv = require('dotenv').config();
 const port = process.env.PORT || 5000;
 const { errorHandler } = require('./middleware/errorMiddleware');
+const colors = require('colors');
+const dbConnect = require('./config/db')
 
+dbConnect();
 const app = express();
 
 app.use(express.json());
@@ -12,7 +15,7 @@ app.use(express.urlencoded({extended:false}));
 app.use('/api/users',require('./routes/usersRoute'));
 app.use('/api/messages',require('./routes/messagesRoute'));
 
-app.use(errorHandler);
+app.use(errorHandler)
 
 app.listen(port,()=>{
     console.log(`server started on port ${port}`);

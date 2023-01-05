@@ -3,8 +3,8 @@ const { getAllUsers, getUser, register, updateUser } = require('../controllers/u
 const router = express.Router();
 
 router.route('/:id').get(getUser).put(updateUser);
-
 router.get('/',getAllUsers);
+
 
 router.post('/register', register);
 
