@@ -82,7 +82,7 @@ const deleteMessage = asyncHandler( async (req,res) => {
     }else{
 
         await message.remove();
-        res.status(200).json(message)
+        res.status(200).json({id:req.params.id})
     }
 })
 
