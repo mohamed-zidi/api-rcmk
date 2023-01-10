@@ -131,102 +131,39 @@ const getMe = asyncHandler(async (req, res) => {
 // @access private
 const updateUser = asyncHandler(async (req, res) => {
 
-    const { pseudo, mail, password, bio, image, isAdmin } = req.body;
-
-    // Vérifier si aucun champs est remplir
-    if (!req.body) {
+    const { pseudo, mail, password, bio, image } = req.body;
+    const mailAlreadyExists = await User.findOne({mail});
+    const pseudoAlreadyExists = await User.findOne({pseudo});
+    // Vérifier si aucun champs est rempli
+    if (!pseudo && !mail && !password && !bio && !image) {
         res.status(400);
         throw new Error('Veuillez remplir au moins un champs !');
-
-    } // Vérifier si au moins un champs est remplir
+    } // Vérifier si au moins un champs est rempli
     else {
 
-        const user = await User.findById(req.params.id);
+        const user = await User.findById(req.user.id);
 
         // Vérifier si l'utilisateur existe
-        if (!req.params.id) {
+        if (!user) {
             res.status(400);
             throw new Error("Aucun utilisateur trouvé");
         } else {
-            // Vérifier si le champs pseudo est remplir
-            if (pseudo) {
-                // Vérifier si l'utilisateur existe puis le modifier
-                User.findOneAndUpdate(
-                    { _id: req.params.id },
-                    {
-                        $set: {
-                            pseudo: pseudo,
-                        },
-                    }).then(() => {
-                        res.status(200).json({
-                            message: "Utilisateur bien modifiée !"
-                        })
-                    })
+            if(mailAlreadyExists){
+                res.status(400);
+                throw new Error('Adresse mail déjà utilisée');
             }
 
-            // Vérifier si le champs mail est remplir
-            if (mail) {
-                // Vérifier si l'utilisateur existe puis le modifier
-                User.findOneAndUpdate(
-                    { _id: req.params.id },
-                    {
-                        $set: {
-                            mail: mail,
-                        },
-                    }).then(() => {
-                        res.status(200).json({
-                            message: "Utilisateur bien modifiée !"
-                        })
-                    })
+            if(pseudoAlreadyExists){
+                res.status(400);
+                throw new Error('Pseudo déjà utilisé');
             }
+            
+            const updatedUser = await User.findByIdAndUpdate(req.user.id,req.body,
+                {
+                new: true
+                })
 
-            // Vérifier si le champs password est remplir
-            if (password) {
-                // Vérifier si l'utilisateur existe puis le modifier
-                User.findOneAndUpdate(
-                    { _id: req.params.id },
-                    {
-                        $set: {
-                            password: password,
-                        },
-                    }).then(() => {
-                        res.status(200).json({
-                            message: "Utilisateur bien modifiée !"
-                        })
-                    })
-            }
-
-            // Vérifier si le champs bio est remplir
-            if (bio) {
-                // Vérifier si l'utilisateur existe puis le modifier
-                User.findOneAndUpdate(
-                    { _id: req.params.id },
-                    {
-                        $set: {
-                            bio: bio,
-                        },
-                    }).then(() => {
-                        res.status(200).json({
-                            message: "Utilisateur bien modifiée !"
-                        })
-                    })
-            }
-
-            // Vérifier si le champs image est remplir
-            if (image) {
-                // Vérifier si l'utilisateur existe puis le modifier
-                User.findOneAndUpdate(
-                    { _id: req.params.id },
-                    {
-                        $set: {
-                            image: image,
-                        },
-                    }).then(() => {
-                        res.status(200).json({
-                            message: "Utilisateur bien modifiée !"
-                        })
-                    })
-            }
+            res.status(200).json(updatedUser)
         }
     }
 })
@@ -243,7 +180,7 @@ const deleteUser = asyncHandler(async (req, res) => {
 })
 
 
-// @desc Modifier les droit d'un user en entant admin
+// @desc Modifier les droit d'un user en etant admin
 // @route PUT /api/users/:id
 // @access private
 const updateUserAdmin = asyncHandler(async (req, res) => {
