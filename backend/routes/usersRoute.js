@@ -1,13 +1,17 @@
 const express = require('express');
-const { getAllUsers, getUser, registerUser, updateUser } = require('../controllers/usersController');
+const { getAllUsers, getUser, registerUser, login, getMe, updateMe } = require('../controllers/usersController');
 const router = express.Router();
+const protect = require('../middleware/authMiddleware');
 
-router.route('/:id').get(getUser).put(updateUser);
-router.get('/',getAllUsers);
+// routes nécessitant une authentification
+// router.route('/:id').put(protect,updateMe);
+router.get('/find/:id',protect,getUser);
+router.get('/',protect,getAllUsers);
+router.route('/me').get(protect,getMe).put(protect,updateMe);
 
-
+// routes sans authentification
 router.post('/', registerUser);
-
+router.post('/login', login);
 
 
 

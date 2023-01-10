@@ -7,27 +7,68 @@ const User = require('../models/userModel');
 // @route GET /api/users
 // @access private
 const getAllUsers = asyncHandler(async (req,res) => {
-
-    res.status(200).json({response:"get all users"});
+    const users = await User.find();
+    res.status(200).json(users);
 })
 
 
-// @desc Recupérer un user
-// @route GET /api/users/:id
+// @desc Recupérer un user via son id
+// @route GET /api/users/find/:id
 // @access private
 const getUser = asyncHandler(async (req,res) => {
+    const user = await User.findById(req.params.id);
+    if(!user){
+        res.status(400);
+        res.json('Utilisateur introuvable');
+    }
+    res.status(200).json({
+        _id:user.id,
+        pseudo:user.pseudo,
+        mail:user.mail
+    })
+})
 
-    res.status(200).json({response:`get user by id ${req.params.id}`})
+
+// @desc Recupérer infos user authentifé(token)
+// @route GET /api/users/me
+// @access private
+const getMe = asyncHandler(async (req,res) => {
+    const { _id,mail,pseudo } = await User.findById(req.user.id)
+    res.status(200).json({
+        _id:_id,
+        mail:mail,
+        pseudo:pseudo
+    })
 })
 
 
 // @desc Modifier infos user
 // @route PUT /api/users/:id
 // @access private
-const updateUser = asyncHandler(async (req,res) => {
+const updateMe = asyncHandler(async (req,res) => {
+    const { mail,pseudo } = await User.findById(req.user.id);
+
+    console.log(req.body);
+    if(!mail||!pseudo){
+        res.status(400);
+        throw new Error('Utilisateur introuvable');
+    }
+
+    if(!req.body.mail||!req.body.pseudo){
+        res.status(400);
+        throw new Error('Données manquantes pour modifier vos données');
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(req.user.id,req.body,
+        {
+            new:true
+        })
+        
+    res.status(200).json(updatedUser);
     
-    res.status(200).json({response:`modifier infos user ${req.params.id}`})
-})
+
+    })
+
 
 
 // @desc inscription d'un utilisateur
@@ -44,10 +85,15 @@ const registerUser = asyncHandler(async (req,res) => {
     }
 
     // Utilisateur déjà éxistant
-    const userExists = await User.findOne({mail});
-    if(userExists){
+    const userMailExists = await User.findOne({mail});
+    const userPseudoExists = await User.findOne({pseudo});
+
+    if(userMailExists){
         res.status(400);
         throw new Error('Adresse mail déja utilisée');
+    }else if(userPseudoExists){
+        res.status(400);
+        throw new Error('Pseudo déjà utilisé,veuillez en choisir un autre');
     }
 
     // Hash password
@@ -58,21 +104,21 @@ const registerUser = asyncHandler(async (req,res) => {
     const user = await User.create({
         pseudo,
         mail,
-        password:hashedPassword
+        password:hashedPassword,
     })
 
     if(user){
-        res.status(200);
+        res.status(201);
         res.json({
             _id:user.id,
             pseudo:user.pseudo,
-            email:user.mail
+            email:user.mail,
+            token:generateToken(user._id)
         })
     }else{
         res.status(400);
         throw new Error('Données utilisateur non valides')
     }
-
 })
 
 
@@ -80,14 +126,37 @@ const registerUser = asyncHandler(async (req,res) => {
 // @route POST /api/users/login
 // @access public
 const login = asyncHandler( async (req,res) => {
-    
-    res.status(201).json({response:"register"});
+    const {mail,password} = req.body;
+
+    const user = await User.findOne({mail});
+
+    if(user && (await bcrypt.compare(password,user.password))){
+        res.status(201);
+        res.json({
+            _id:user.id,
+            pseudo:user.pseudo,
+            email:user.mail,
+            token:generateToken(user._id)
+        })
+    }else{
+        res.status(400);
+        throw new Error('Identifiants invalide')
+    }
 })
 
+
+// Generate JWT
+const generateToken = (id) => {
+    return jwt.sign({ id }, process.env.JWT_SECRET, {
+        expiresIn:'30d'
+    })
+}
 
 module.exports = {
     getAllUsers,
     getUser,
     registerUser,
-    updateUser
+    updateMe,
+    login,
+    getMe
 };

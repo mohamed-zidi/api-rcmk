@@ -1,6 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const Message = require('../models/messageModel');
-
+const User = require('../models/userModel');
 
 // @desc Recupérer tous les messages
 // @route GET /api/messages
@@ -35,7 +35,8 @@ const setMessage = asyncHandler( async  (req,res) => {
         throw new Error("Aucun message n'a été envoyé");
     }else{
         const message = await Message.create({
-            text: req.body.text
+            text: req.body.text,
+            user :req.user.id
         })
         console.log(req.body.text);
         res.status(200).json(message);
@@ -49,25 +50,38 @@ const setMessage = asyncHandler( async  (req,res) => {
 const updateMessage = asyncHandler( async  (req,res) => {
 
     const message = await Message.findById(req.params.id);
-
-    if(!req.params.id){
+    
+    if(!message){
         res.status(400);
         throw new Error("Aucun message trouvé");
-    }else{
-        if(!req.body.text){
-    
-            res.status(400);
-            throw new Error("Body de la requête vide");
-        }else{
-            const updatedMessage = await Message.findByIdAndUpdate(req.params.id,req.body,
-                {
-                    new:true
-                })
-                
-                res.status(200).json(updatedMessage);
-            }
     }
+
+    if(!req.body.text){
+        res.status(400);
+        throw new Error("Body de la requête vide");
+    }
+
+    const user = await User.findById(req.user.id);
+    if(!user){
+        console.log(5);
+        res.status(401);
+        throw new Error('Utilisateur introuvable')
+    }
+    // Seulement l'utilisateur connecté peut modifier son propre message
+    if(message.user.toString() !== user.id){
+        console.log(6);
+        res.status(401);
+        throw new Error('Utilisateur non autorisé')
+    }
+    const updatedMessage = await Message.findByIdAndUpdate(req.params.id,req.body,
+            {
+                new:true
+            })
+                
+            res.status(200).json(updatedMessage);
 })
+    
+
 
 
 // @desc Supprimer un message
