@@ -42,10 +42,16 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     // Utilisateur déjà éxistant
-    const userExists = await User.findOne({ mail });
-    if (userExists) {
+    const userMailExists = await User.findOne({mail});
+    const userPseudoExists = await User.findOne({pseudo});
+
+    if(userMailExists){
         res.status(400);
         throw new Error('Adresse mail déja utilisée');
+    }
+    if(userPseudoExists){
+        res.status(400);
+        throw new Error('Pseudo déjà utilisé,veuillez en choisir un autre');
     }
 
     // Hash password
@@ -125,10 +131,15 @@ const getMe = asyncHandler(async (req, res) => {
 // @access private
 const updateUser = asyncHandler(async (req, res) => {
 
-    const { pseudo, mail, password } = req.body;
+    const { pseudo, mail, password, bio, image, isAdmin } = req.body;
 
-    // Vérifier si au moins un champs est remplir
-    if (pseudo || mail || password) {
+    // Vérifier si aucun champs est remplir
+    if (!req.body) {
+        res.status(400);
+        throw new Error('Veuillez remplir au moins un champs !');
+
+    } // Vérifier si au moins un champs est remplir
+    else {
 
         const user = await User.findById(req.params.id);
 
@@ -184,11 +195,39 @@ const updateUser = asyncHandler(async (req, res) => {
                         })
                     })
             }
+
+            // Vérifier si le champs bio est remplir
+            if (bio) {
+                // Vérifier si l'utilisateur existe puis le modifier
+                User.findOneAndUpdate(
+                    { _id: req.params.id },
+                    {
+                        $set: {
+                            bio: bio,
+                        },
+                    }).then(() => {
+                        res.status(200).json({
+                            message: "Utilisateur bien modifiée !"
+                        })
+                    })
+            }
+
+            // Vérifier si le champs image est remplir
+            if (image) {
+                // Vérifier si l'utilisateur existe puis le modifier
+                User.findOneAndUpdate(
+                    { _id: req.params.id },
+                    {
+                        $set: {
+                            image: image,
+                        },
+                    }).then(() => {
+                        res.status(200).json({
+                            message: "Utilisateur bien modifiée !"
+                        })
+                    })
+            }
         }
-    } // Vérifier si aucun champs est remplir
-    else if (!pseudo || !mail || !password) {
-        res.status(400);
-        throw new Error('Veuillez remplir au moins un champs !');
     }
 })
 
@@ -204,6 +243,55 @@ const deleteUser = asyncHandler(async (req, res) => {
 })
 
 
+// @desc Modifier les droit d'un user en entant admin
+// @route PUT /api/users/:id
+// @access private
+const updateUserAdmin = asyncHandler(async (req, res) => {
+
+    const { isAdmin } = req.body;
+
+    const user = await User.findById(req.user.id);
+
+    if (user.isAdmin === false) {
+        res.status(401);
+        throw new Error("Vous n'êtes pas autorisé à modifier le role de cet utilisateur");
+    } else {
+        // Vérifier si le champs isAdmin est remplir
+        if (isAdmin) {
+            // Vérifier si l'utilisateur existe puis le modifier
+            User.findOneAndUpdate(
+                { _id: req.params.id },
+                {
+                    $set: {
+                        isAdmin: isAdmin,
+                    },
+                }).then(() => {
+                    res.status(200).json({
+                        message: "Utilisateur bien modifiée !"
+                    })
+                })
+        }
+    }
+})
+
+
+// @desc Supprimer un user en etant admin
+// @route DELETE /api/users/:id
+// @access private
+const deleteUserAdmin = asyncHandler(async (req, res) => {
+
+    const user = await User.findById(req.user.id);
+
+    if (user.isAdmin === false) {
+        res.status(401);
+        throw new Error("Vous n'êtes pas autorisé à supprimer un utilisateur");
+    } else {
+        User.deleteOne({ _id: req.params.id })
+            .then(() => res.json({ message: "l'utilisateur à bien été supprimer" }))
+            .catch((error) => res.status(400).json({ error: "Aucun Utilisateur trouvé" }));
+    }
+})
+
 module.exports = {
     getAllUsers,
     getUser,
@@ -212,4 +300,6 @@ module.exports = {
     getMe,
     updateUser,
     deleteUser,
+    updateUserAdmin,
+    deleteUserAdmin
 };

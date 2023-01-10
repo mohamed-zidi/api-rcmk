@@ -7,7 +7,8 @@ const User = require('../models/userModel');
 // @route GET /api/messages
 // @access private
 const getAllMessages = asyncHandler(async (req, res) => {
-    const messages = await Message.find({ user: req.user.id });
+    const messages = await Message.find();
+    // const messages = await Message.find({ user: req.user.id });
     res.status(200).json(messages);
 })
 
@@ -62,7 +63,7 @@ const updateMessage = asyncHandler(async (req, res) => {
             throw new Error("Body de la requête vide");
         } else {
 
-            const user = await User.findById(req.user.id); 
+            const user = await User.findById(req.user.id);
 
             // Vérifier si l'utilisateur est connecté 
             if (!user) {
@@ -116,10 +117,34 @@ const deleteMessage = asyncHandler(async (req, res) => {
 })
 
 
+// @desc Supprimer un message
+// @route DELETE /api/messages/:id
+// @access private
+const deleteMessageAdmin = asyncHandler(async (req, res) => {
+    const message = await Message.findById(req.params.id);
+
+    if (!message) {
+        res.status(400);
+        throw new Error("Aucun message n'a été envoyé");
+    } else {
+
+        const user = await User.findById(req.params.id);
+
+        // Vérifier si l'utilisateur est connecté et est un admin
+        if (user.isAdmin === false) {
+            res.status(401);
+            throw new Error("Opération non autorisé");
+        }
+        await message.remove();
+        res.status(200).json({ id: req.params.id })
+    }
+})
+
 module.exports = {
     getAllMessages,
     setMessage,
     deleteMessage,
     getMessage,
-    updateMessage
+    updateMessage,
+    deleteMessageAdmin
 }
