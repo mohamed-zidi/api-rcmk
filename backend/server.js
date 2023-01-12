@@ -5,18 +5,21 @@ const port = process.env.PORT || 5000;
 const { errorHandler } = require('./middleware/errorMiddleware');
 const colors = require('colors');
 const dbConnect = require('./config/db')
+const cors = require('cors')
+
 
 dbConnect();
 const app = express();
 
 app.use(express.json());
-app.use(express.urlencoded({extended:false}));
+app.use(express.urlencoded({ extended: false }));
+app.use(cors()) // Use this after the variable declaration
 
-app.use('/api/users',require('./routes/usersRoute'));
-app.use('/api/messages',require('./routes/messagesRoute'));
+app.use('/api/users', require('./routes/usersRoute'));
+app.use('/api/messages', require('./routes/messagesRoute'));
 
 app.use(errorHandler)
 
-app.listen(port,()=>{
+app.listen(port, () => {
     console.log(`server started on port ${port}`);
 });
