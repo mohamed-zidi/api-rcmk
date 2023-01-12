@@ -42,14 +42,14 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     // Utilisateur déjà éxistant
-    const userMailExists = await User.findOne({mail});
-    const userPseudoExists = await User.findOne({pseudo});
+    const userMailExists = await User.findOne({ mail });
+    const userPseudoExists = await User.findOne({ pseudo });
 
-    if(userMailExists){
+    if (userMailExists) {
         res.status(400);
         throw new Error('Adresse mail déja utilisée');
     }
-    if(userPseudoExists){
+    if (userPseudoExists) {
         res.status(400);
         throw new Error('Pseudo déjà utilisé,veuillez en choisir un autre');
     }
@@ -95,6 +95,7 @@ const login = asyncHandler(async (req, res) => {
             _id: user.id,
             pseudo: user.pseudo,
             email: user.mail,
+            isAdmin: user.isAdmin,
             token: generateToken(user._id),
         })
     } else {
