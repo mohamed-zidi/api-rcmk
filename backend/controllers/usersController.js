@@ -157,8 +157,17 @@ const updateUser = asyncHandler(async (req, res) => {
                 res.status(400);
                 throw new Error('Pseudo déjà utilisé');
             }
-            
-            const updatedUser = await User.findByIdAndUpdate(req.user.id,req.body,
+            // Hash password
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+
+            const updatedUser = await User.findByIdAndUpdate(req.user.id,{
+                pseudo,
+                mail,
+                password:hashedPassword,
+                bio,
+                image
+            },
                 {
                 new: true
                 })
