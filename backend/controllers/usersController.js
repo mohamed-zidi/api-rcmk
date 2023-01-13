@@ -96,6 +96,7 @@ const login = asyncHandler(async (req, res) => {
             pseudo: user.pseudo,
             email: user.mail,
             token: generateToken(user._id),
+            isAdmin:user.isAdmin
         })
     } else {
         res.status(401);
