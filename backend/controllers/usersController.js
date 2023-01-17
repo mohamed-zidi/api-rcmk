@@ -42,14 +42,14 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     // Utilisateur déjà éxistant
-    const userMailExists = await User.findOne({mail});
-    const userPseudoExists = await User.findOne({pseudo});
+    const userMailExists = await User.findOne({ mail });
+    const userPseudoExists = await User.findOne({ pseudo });
 
-    if(userMailExists){
+    if (userMailExists) {
         res.status(400);
         throw new Error('Adresse mail déja utilisée');
     }
-    if(userPseudoExists){
+    if (userPseudoExists) {
         res.status(400);
         throw new Error('Pseudo déjà utilisé,veuillez en choisir un autre');
     }
@@ -91,16 +91,49 @@ const login = asyncHandler(async (req, res) => {
     const user = await User.findOne({ mail });
 
     if (user && (await bcrypt.compare(password, user.password))) {
-        res.json({
-            _id: user.id,
-            pseudo: user.pseudo,
-            email: user.mail,
-            token: generateToken(user._id),
-            isAdmin:user.isAdmin
-        })
+        await User.findOneAndUpdate(
+            { mail: mail },
+            {
+                $set: {
+                    isConnect: 'true',
+                },
+            }).then(() => {
+                res.json({
+                    _id: user.id,
+                    pseudo: user.pseudo,
+                    email: user.mail,
+                    isAdmin: user.isAdmin,
+                    isConnect: user.isConnect,
+                    token: generateToken(user._id),
+                })
+            })
     } else {
         res.status(401);
         throw new Error('Identifiants ou mdp incorrects');
+    }
+})
+
+// @desc Vérifier si l'utilisateur est déconnecté
+// @route GET /api/users/logout
+// @access public
+const logout = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user.id);
+
+    if (user) {
+        User.findOneAndUpdate(
+            { _id: req.user._id },
+            {
+                $set: {
+                    isConnect: false,
+                },
+            }).then(() => {
+                res.status(200).json({
+                  message: 'Vous êtes bien déconnecté'
+                })
+            })
+    } else {
+        res.status(400);
+        throw new Error('Aucun utilisateur trouvé');
     }
 })
 
@@ -133,8 +166,8 @@ const getMe = asyncHandler(async (req, res) => {
 const updateUser = asyncHandler(async (req, res) => {
 
     const { pseudo, mail, password, bio, image } = req.body;
-    const mailAlreadyExists = await User.findOne({mail});
-    const pseudoAlreadyExists = await User.findOne({pseudo});
+    const mailAlreadyExists = await User.findOne({ mail });
+    const pseudoAlreadyExists = await User.findOne({ pseudo });
     // Vérifier si aucun champs est rempli
     if (!pseudo && !mail && !password && !bio && !image) {
         res.status(400);
@@ -149,12 +182,12 @@ const updateUser = asyncHandler(async (req, res) => {
             res.status(400);
             throw new Error("Aucun utilisateur trouvé");
         } else {
-            if(mailAlreadyExists){
+            if (mailAlreadyExists) {
                 res.status(400);
                 throw new Error('Adresse mail déjà utilisée');
             }
 
-            if(pseudoAlreadyExists){
+            if (pseudoAlreadyExists) {
                 res.status(400);
                 throw new Error('Pseudo déjà utilisé');
             }
@@ -162,15 +195,15 @@ const updateUser = asyncHandler(async (req, res) => {
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash(password, salt);
 
-            const updatedUser = await User.findByIdAndUpdate(req.user.id,{
+            const updatedUser = await User.findByIdAndUpdate(req.user.id, {
                 pseudo,
                 mail,
-                password:hashedPassword,
+                password: hashedPassword,
                 bio,
                 image
             },
                 {
-                new: true
+                    new: true
                 })
 
             res.status(200).json(updatedUser)
@@ -244,6 +277,7 @@ module.exports = {
     getUser,
     registerUser,
     login,
+    logout,
     getMe,
     updateUser,
     deleteUser,
