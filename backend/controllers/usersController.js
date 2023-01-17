@@ -91,13 +91,22 @@ const login = asyncHandler(async (req, res) => {
     const user = await User.findOne({ mail });
 
     if (user && (await bcrypt.compare(password, user.password))) {
-        res.json({
-            _id: user.id,
-            pseudo: user.pseudo,
-            email: user.mail,
-            isAdmin: user.isAdmin,
-            token: generateToken(user._id),
-        })
+        await User.findOneAndUpdate(
+            { mail: mail },
+            {
+                $set: {
+                    isConnect: 'true',
+                },
+            }).then(() => {
+                res.json({
+                    _id: user.id,
+                    pseudo: user.pseudo,
+                    email: user.mail,
+                    isAdmin: user.isAdmin,
+                    isConnect: user.isConnect,
+                    token: generateToken(user._id),
+                })
+            })
     } else {
         res.status(401);
         throw new Error('Identifiants ou mdp incorrects');
@@ -111,6 +120,21 @@ const generateToken = (id) => {
         expiresIn: '30d'
     })
 }
+
+// @desc Vérifier si l'utilisateur est déconnecté
+// @route GET /api/users/logout
+// @access public
+const logout = asyncHandler(async (req, res) => {
+    User.findOneAndUpdate(
+        { _id: req.user.id },
+        {
+            $set: {
+                isConnect: false,
+            },
+        }).then(() => {
+            res.status(200)
+        })
+})
 
 // @desc Récupérer les données d'user
 // @route GET /api/users/me
@@ -298,9 +322,10 @@ module.exports = {
     getUser,
     registerUser,
     login,
+    logout,
     getMe,
     updateUser,
     deleteUser,
     updateUserAdmin,
-    deleteUserAdmin
+    deleteUserAdmin,
 };
