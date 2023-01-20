@@ -42,14 +42,14 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     // Utilisateur déjà éxistant
-    const userMailExists = await User.findOne({mail});
-    const userPseudoExists = await User.findOne({pseudo});
+    const userMailExists = await User.findOne({ mail });
+    const userPseudoExists = await User.findOne({ pseudo });
 
-    if(userMailExists){
+    if (userMailExists) {
         res.status(400);
         throw new Error('Adresse mail déja utilisée');
     }
-    if(userPseudoExists){
+    if (userPseudoExists) {
         res.status(400);
         throw new Error('Pseudo déjà utilisé,veuillez en choisir un autre');
     }
@@ -86,26 +86,62 @@ const registerUser = asyncHandler(async (req, res) => {
 // @access public
 const login = asyncHandler(async (req, res) => {
     const { mail, password } = req.body;
-
+    console.log(req.body);
     // Vérifier si l'utilisateur existe
     const user = await User.findOne({ mail });
-
+    if(user.isBanned===true){
+        res.status(401);
+        throw new Error('Vous avez été banni vous ne pouvez plus vous connecter');
+    }
     if (user && (await bcrypt.compare(password, user.password))) {
-        res.json({
-            _id: user.id,
-            pseudo: user.pseudo,
-            email: user.mail,
-            token: generateToken(user._id),
-            isAdmin:user.isAdmin
-        })
+        await User.findOneAndUpdate(
+            { mail: mail },
+            {
+                $set: {
+                    isConnect: 'true',
+                },
+            }).then(() => {
+                res.json({
+                    _id: user.id,
+                    pseudo: user.pseudo,
+                    email: user.mail,
+                    isAdmin: user.isAdmin,
+                    isConnect: user.isConnect,
+                    token: generateToken(user._id),
+                    isBanned:user.isBanned,
+                })
+            })
     } else {
         res.status(401);
-        throw new Error('Identifiants ou mdp incorrects');
+        throw new Error('Identifiant ou mot de passe incorrect');
     }
 })
 
-// Génération du token
+// @desc Vérifier si l'utilisateur est déconnecté
+// @route GET /api/users/logout
+// @access public
+const logout = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user.id);
 
+    if (user) {
+        User.findOneAndUpdate(
+            { _id: req.user._id },
+            {
+                $set: {
+                    isConnect: false,
+                },
+            }).then(() => {
+                res.status(200).json({
+                  message: 'Vous êtes bien déconnecté'
+                })
+            })
+    } else {
+        res.status(400);
+        throw new Error('Aucun utilisateur trouvé');
+    }
+})
+
+// Création du token
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: '30d'
@@ -133,9 +169,9 @@ const getMe = asyncHandler(async (req, res) => {
 const updateUser = asyncHandler(async (req, res) => {
 
     const { pseudo, mail, password, bio, image } = req.body;
-    const mailAlreadyExists = await User.findOne({mail});
-    const pseudoAlreadyExists = await User.findOne({pseudo});
-    // Vérifier si aucun champs est rempli
+    const mailAlreadyExists = await User.findOne({ mail });
+    const pseudoAlreadyExists = await User.findOne({ pseudo });
+    // Vérifier si aucun champ est rempli
     if (!pseudo && !mail && !password && !bio && !image) {
         res.status(400);
         throw new Error('Veuillez remplir au moins un champs !');
@@ -149,12 +185,12 @@ const updateUser = asyncHandler(async (req, res) => {
             res.status(400);
             throw new Error("Aucun utilisateur trouvé");
         } else {
-            if(mailAlreadyExists){
+            if (mailAlreadyExists) {
                 res.status(400);
                 throw new Error('Adresse mail déjà utilisée');
             }
 
-            if(pseudoAlreadyExists){
+            if (pseudoAlreadyExists) {
                 res.status(400);
                 throw new Error('Pseudo déjà utilisé');
             }
@@ -162,15 +198,15 @@ const updateUser = asyncHandler(async (req, res) => {
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash(password, salt);
 
-            const updatedUser = await User.findByIdAndUpdate(req.user.id,{
+            const updatedUser = await User.findByIdAndUpdate(req.user.id, {
                 pseudo,
                 mail,
-                password:hashedPassword,
+                password: hashedPassword,
                 bio,
                 image
             },
                 {
-                new: true
+                    new: true
                 })
 
             res.status(200).json(updatedUser)
@@ -195,7 +231,7 @@ const deleteUser = asyncHandler(async (req, res) => {
 // @access private
 const updateUserAdmin = asyncHandler(async (req, res) => {
 
-    const { isAdmin } = req.body;
+    const { isAdmin,isBanned } = req.body;
 
     const user = await User.findById(req.user.id);
 
@@ -204,7 +240,7 @@ const updateUserAdmin = asyncHandler(async (req, res) => {
         throw new Error("Vous n'êtes pas autorisé à modifier le role de cet utilisateur");
     } else {
         // Vérifier si le champs isAdmin est remplir
-        if (isAdmin) {
+        if (isAdmin || isBanned) {
             // Vérifier si l'utilisateur existe puis le modifier
             User.findOneAndUpdate(
                 { _id: req.params.id },
@@ -212,9 +248,12 @@ const updateUserAdmin = asyncHandler(async (req, res) => {
                     $set: {
                         isAdmin: isAdmin,
                     },
+                    $set: {
+                        isBanned: isBanned,
+                    },
                 }).then(() => {
                     res.status(200).json({
-                        message: "Utilisateur bien modifiée !"
+                        message: "Utilisateur bien modifié !"
                     })
                 })
         }
@@ -244,6 +283,7 @@ module.exports = {
     getUser,
     registerUser,
     login,
+    logout,
     getMe,
     updateUser,
     deleteUser,
