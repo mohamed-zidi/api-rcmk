@@ -38,9 +38,9 @@ const setMessage = asyncHandler(async (req, res) => {
     } else {
         const message = await Message.create({
             user: req.user.id,
+            userPseudo: req.user.pseudo,
             text: req.body.text,
         })
-        console.log(req.body.text);
         res.status(200).json(message);
     }
 })

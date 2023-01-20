@@ -86,10 +86,13 @@ const registerUser = asyncHandler(async (req, res) => {
 // @access public
 const login = asyncHandler(async (req, res) => {
     const { mail, password } = req.body;
-
+    console.log(req.body);
     // Vérifier si l'utilisateur existe
     const user = await User.findOne({ mail });
-
+    if(user.isBanned===true){
+        res.status(401);
+        throw new Error('Vous avez été banni vous ne pouvez plus vous connecter');
+    }
     if (user && (await bcrypt.compare(password, user.password))) {
         await User.findOneAndUpdate(
             { mail: mail },
@@ -105,11 +108,12 @@ const login = asyncHandler(async (req, res) => {
                     isAdmin: user.isAdmin,
                     isConnect: user.isConnect,
                     token: generateToken(user._id),
+                    isBanned:user.isBanned,
                 })
             })
     } else {
         res.status(401);
-        throw new Error('Identifiants ou mdp incorrects');
+        throw new Error('Identifiant ou mot de passe incorrect');
     }
 })
 
@@ -137,8 +141,7 @@ const logout = asyncHandler(async (req, res) => {
     }
 })
 
-// Génération du token
-
+// Création du token
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: '30d'
@@ -168,7 +171,7 @@ const updateUser = asyncHandler(async (req, res) => {
     const { pseudo, mail, password, bio, image } = req.body;
     const mailAlreadyExists = await User.findOne({ mail });
     const pseudoAlreadyExists = await User.findOne({ pseudo });
-    // Vérifier si aucun champs est rempli
+    // Vérifier si aucun champ est rempli
     if (!pseudo && !mail && !password && !bio && !image) {
         res.status(400);
         throw new Error('Veuillez remplir au moins un champs !');
@@ -228,7 +231,7 @@ const deleteUser = asyncHandler(async (req, res) => {
 // @access private
 const updateUserAdmin = asyncHandler(async (req, res) => {
 
-    const { isAdmin } = req.body;
+    const { isAdmin,isBanned } = req.body;
 
     const user = await User.findById(req.user.id);
 
@@ -237,7 +240,7 @@ const updateUserAdmin = asyncHandler(async (req, res) => {
         throw new Error("Vous n'êtes pas autorisé à modifier le role de cet utilisateur");
     } else {
         // Vérifier si le champs isAdmin est remplir
-        if (isAdmin) {
+        if (isAdmin || isBanned) {
             // Vérifier si l'utilisateur existe puis le modifier
             User.findOneAndUpdate(
                 { _id: req.params.id },
@@ -245,9 +248,12 @@ const updateUserAdmin = asyncHandler(async (req, res) => {
                     $set: {
                         isAdmin: isAdmin,
                     },
+                    $set: {
+                        isBanned: isBanned,
+                    },
                 }).then(() => {
                     res.status(200).json({
-                        message: "Utilisateur bien modifiée !"
+                        message: "Utilisateur bien modifié !"
                     })
                 })
         }

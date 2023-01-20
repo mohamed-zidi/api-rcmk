@@ -6,6 +6,11 @@ const messageSchema = mongoose.Schema({
         required: true,
         ref: 'User',
     },
+    userPseudo: {
+        type: mongoose.Schema.Types.String,
+        required: true,
+        ref: 'User',
+    },
     text: {
         type: String,
         required: [true, "Please add a text value"]
