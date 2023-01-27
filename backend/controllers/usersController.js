@@ -89,8 +89,8 @@ const login = asyncHandler(async (req, res) => {
     console.log(req.body);
     // Vérifier si l'utilisateur existe
     const user = await User.findOne({ mail });
-    if(user.isBanned===true){
-        res.status(401);
+    if (user.isBanned === 'true') {
+        res.status(404);
         throw new Error('Vous avez été banni vous ne pouvez plus vous connecter');
     }
     if (user && (await bcrypt.compare(password, user.password))) {
@@ -108,7 +108,7 @@ const login = asyncHandler(async (req, res) => {
                     isAdmin: user.isAdmin,
                     isConnect: user.isConnect,
                     token: generateToken(user._id),
-                    isBanned:user.isBanned,
+                    isBanned: user.isBanned,
                 })
             })
     } else {
@@ -128,11 +128,11 @@ const logout = asyncHandler(async (req, res) => {
             { _id: req.user._id },
             {
                 $set: {
-                    isConnect: false,
+                    isConnect: 'false',
                 },
             }).then(() => {
                 res.status(200).json({
-                  message: 'Vous êtes bien déconnecté'
+                    message: 'Vous êtes bien déconnecté'
                 })
             })
     } else {
@@ -231,7 +231,7 @@ const deleteUser = asyncHandler(async (req, res) => {
 // @access private
 const updateUserAdmin = asyncHandler(async (req, res) => {
 
-    const { isAdmin,isBanned } = req.body;
+    const { isAdmin, isBanned } = req.body;
 
     const user = await User.findById(req.user.id);
 
@@ -240,7 +240,7 @@ const updateUserAdmin = asyncHandler(async (req, res) => {
         throw new Error("Vous n'êtes pas autorisé à modifier le role de cet utilisateur");
     } else {
         // Vérifier si le champs isAdmin est remplir
-        if (isAdmin || isBanned) {
+        if (isAdmin) {
             // Vérifier si l'utilisateur existe puis le modifier
             User.findOneAndUpdate(
                 { _id: req.params.id },
@@ -248,6 +248,18 @@ const updateUserAdmin = asyncHandler(async (req, res) => {
                     $set: {
                         isAdmin: isAdmin,
                     },
+                }).then(() => {
+                    res.status(200).json({
+                        message: "Utilisateur bien modifié !"
+                    })
+                })
+        }
+        // Vérifier si le champs isBanned est remplir
+        if (isBanned) {
+            // Vérifier si l'utilisateur existe puis le modifier
+            User.findOneAndUpdate(
+                { _id: req.params.id },
+                {
                     $set: {
                         isBanned: isBanned,
                     },
