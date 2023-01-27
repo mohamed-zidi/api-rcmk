@@ -125,10 +125,10 @@ const deleteMessageAdmin = asyncHandler(async (req, res) => {
 
     if (!message) {
         res.status(400);
-        throw new Error("Aucun message n'a été envoyé");
+        throw new Error("Ce message n'existe pas");
     } else {
 
-        const user = await User.findById(req.params.id);
+        const user = await User.findById(req.user.id);
 
         // Vérifier si l'utilisateur est connecté et est un admin
         if (user.isAdmin === false) {
@@ -137,7 +137,42 @@ const deleteMessageAdmin = asyncHandler(async (req, res) => {
         }
         await message.remove();
         res.status(200).json({ id: req.params.id })
+            .then(() => res.json({ message: "Le message à été supprimer avec succès" }))
+            .catch((error) => res.status(400).json({ error: "Action impossible" }));
     }
+})
+
+// @desc Supprimer un message
+// @route PUT /api/messages/:id
+// @access private
+const updateMessageAdmin = asyncHandler(async (req, res) => {
+    const message = await Message.findById(req.params.id);
+
+    if (!message) {
+        res.status(400);
+        throw new Error("Ce message n'existe pas");
+    } else {
+
+        const user = await User.findById(req.user.id);
+
+        // Vérifier si l'utilisateur est connecté et est un admin
+        if (user.isAdmin === false) {
+            res.status(401);
+            throw new Error("Opération non autorisé");
+        }
+        await User.findOneAndUpdate(
+            { _id: req.params.id },
+            {
+                $set: {
+                    isValid: 'false',
+                },
+            }).then(() => {
+                res.status(200).json({
+                    message: "Le message est censurée avec succès!"
+                })
+            })
+    }
+
 })
 
 module.exports = {
@@ -146,5 +181,6 @@ module.exports = {
     deleteMessage,
     getMessage,
     updateMessage,
-    deleteMessageAdmin
+    deleteMessageAdmin,
+    updateMessageAdmin
 }

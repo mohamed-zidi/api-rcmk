@@ -23,17 +23,21 @@ const userSchema = mongoose.Schema({
         required: false
     },
     isAdmin: {
-        type: Boolean,
-        default: false,
+        type: String,
+        default: 'false',
     },
     isConnect: {
-        type: Boolean,
-        default: false,
+        type: String,
+        default: 'false',
     },
     isBanned: {
-        type: Boolean,
-        default: false,
-    },
-})
+        type: String,
+        default: 'false',
+    }
+},
+    {
+        timestamps: true
+    }
+)
 
 module.exports = mongoose.model('User', userSchema)
