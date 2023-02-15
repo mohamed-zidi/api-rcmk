@@ -86,7 +86,7 @@ const registerUser = asyncHandler(async (req, res) => {
 // @access public
 const login = asyncHandler(async (req, res) => {
     const { mail, password } = req.body;
-    console.log(req.body);
+    
     // Vérifier si l'utilisateur existe
     const user = await User.findOne({ mail });
     if(user.isBanned===true){
@@ -194,21 +194,20 @@ const updateUser = asyncHandler(async (req, res) => {
                 res.status(400);
                 throw new Error('Pseudo déjà utilisé');
             }
-            // Hash password
             const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
+            const passwordHash = password ? await bcrypt.hash(password, salt) : undefined;
 
             const updatedUser = await User.findByIdAndUpdate(req.user.id, {
                 pseudo,
                 mail,
-                password: hashedPassword,
+                password: passwordHash,
                 bio,
                 image
             },
                 {
                     new: true
                 })
-
+                
             res.status(200).json(updatedUser)
         }
     }
