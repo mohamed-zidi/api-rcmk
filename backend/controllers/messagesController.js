@@ -146,6 +146,8 @@ const deleteMessageAdmin = asyncHandler(async (req, res) => {
 // @route PUT /api/messages/:id
 // @access private
 const updateMessageAdmin = asyncHandler(async (req, res) => {
+    const { isValid} = req.body;
+
     const message = await Message.findById(req.params.id);
 
     if (!message) {
@@ -164,7 +166,7 @@ const updateMessageAdmin = asyncHandler(async (req, res) => {
             { _id: req.params.id },
             {
                 $set: {
-                    isValid: 'false',
+                    isValid: isValid,
                 },
             }).then(() => {
                 res.status(200).json({
