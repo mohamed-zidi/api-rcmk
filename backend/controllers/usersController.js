@@ -34,7 +34,7 @@ const getUser = asyncHandler(async (req, res) => {
 const registerUser = asyncHandler(async (req, res) => {
 
     const { pseudo, mail, password } = req.body;
-
+    
     if (!pseudo || !mail || !password) {
 
         res.status(400);
