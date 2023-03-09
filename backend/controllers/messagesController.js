@@ -2,6 +2,8 @@ const asyncHandler = require('express-async-handler');
 const Message = require('../models/messageModel');
 const User = require('../models/userModel');
 
+const io = require('../server');
+
 
 // @desc Recupérer tous les messages
 // @route GET /api/messages
@@ -28,7 +30,7 @@ const getMessage = asyncHandler(async (req, res) => {
 })
 
 
-// @desc Enregistrer un message
+// @desc Enregistrer un message et envoyer via websocket
 // @route POST /api/messages
 // @access private
 const setMessage = asyncHandler(async (req, res) => {
@@ -41,6 +43,21 @@ const setMessage = asyncHandler(async (req, res) => {
             userPseudo: req.user.pseudo,
             text: req.body.text,
         })
+
+        let socketMessage = await Message.findById(message._id).populate('user');
+
+        const msg = {
+            _id:socketMessage._id,
+            user:message.user,
+            userPseudo:message.userPseudo,
+            text:message.text,
+            isValid:message.isValid,
+            createdAt:message.createdAt,
+            updatedAt:message.updatedAt
+        }
+        // Code pour envoyer des données au client
+        io.emit("socket_message",(msg));
+        console.log("socket message envoyé", msg);
         res.status(200).json(message);
     }
 })
