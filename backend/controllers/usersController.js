@@ -215,6 +215,38 @@ const getMe = asyncHandler(async (req, res) => {
 // @access private
 const updateUser = asyncHandler(async (req, res) => {
 
+    const { pseudo, mail, password, bio, image } = req.body;
+    const mailAlreadyExists = await User.findOne({ mail });
+    const pseudoAlreadyExists = await User.findOne({ pseudo });
+
+    if(pseudo){
+        // Verifs et validation du pseudo
+        await body('pseudo').notEmpty().withMessage('Le pseudo est requis').trim().isLength(4)
+        .withMessage('Votre pseudo est trop court, il doit faire 4 caractères minimum').run(req);
+    }
+
+    if(mail){
+        // Verifs du mail
+        await body('mail').notEmpty().withMessage('L\'adresse e-mail est requise').trim().isEmail()
+        .withMessage('L\'adresse e-mail doit être valide').matches(/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
+        .withMessage('L\'adresse e-mail doit être valide').run(req);
+    }
+
+    if(password){
+        // Verifs du password
+        await body('password').notEmpty().withMessage('Le mot de passe est requis').trim().isLength({ min: 6 })
+        .withMessage('Le mot de passe doit comporter au moins 6 caractères')
+        .matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/)
+        .withMessage('Le mot de passe doit contenir au moins une lettre majuscule, une lettre minuscule et un chiffre.')
+        .run(req);
+    }
+
+    if(bio){
+        await body('bio').notEmpty().withMessage('La bio est requise. Veuillez en entrer un')
+        .trim().isLength({ min: 1, max: 300 })
+        .withMessage("Votre bio doit être comprise entre 1 et 300 caractères").run(req);
+    }
+
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
@@ -222,11 +254,6 @@ const updateUser = asyncHandler(async (req, res) => {
         console.log(errors);
         throw new Error(errors.array()[0].msg);
     }
-
-
-    const { pseudo, mail, password, bio, image } = req.body;
-    const mailAlreadyExists = await User.findOne({ mail });
-    const pseudoAlreadyExists = await User.findOne({ pseudo });
     // Vérifier si aucun champ est rempli
     if (!pseudo && !mail && !password && !bio && !image) {
         res.status(400);
