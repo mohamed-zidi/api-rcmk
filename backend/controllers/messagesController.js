@@ -1,7 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const Message = require('../models/messageModel');
 const User = require('../models/userModel');
-
+const { body, validationResult } = require('express-validator');
 const io = require('../server');
 
 
@@ -34,6 +34,17 @@ const getMessage = asyncHandler(async (req, res) => {
 // @route POST /api/messages
 // @access private
 const setMessage = asyncHandler(async (req, res) => {
+
+    // Verifs et validation du pseudo
+    await body('text').notEmpty().withMessage('Le message est requis. Veuillez en entrer un').trim().isLength({ min: 1, max: 300 }).withMessage("Votre message doit être compris entre 1 et 300 caractères").run(req);
+
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+        res.status(400);
+        throw new Error(errors.array()[0].msg);
+    }
+
     if (!req.body.text) {
         res.status(400);
         throw new Error("Aucun message n'a été envoyé");
