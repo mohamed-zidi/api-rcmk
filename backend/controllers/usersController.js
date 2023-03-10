@@ -35,16 +35,16 @@ const getUser = asyncHandler(async (req, res) => {
 const registerUser = asyncHandler(async (req, res) => {
 
     // Verifs et validation du pseudo
-    await body('pseudo').notEmpty().withMessage('Le pseudo est requis').isLength(4)
+    await body('pseudo').notEmpty().withMessage('Le pseudo est requis').trim().isLength(4)
     .withMessage('Votre pseudo est trop court, il doit faire 4 caractères minimum').run(req);
 
     // Verification et validation du mail
-    await body('mail').notEmpty().withMessage('L\'adresse e-mail est requise').isEmail()
+    await body('mail').notEmpty().withMessage('L\'adresse e-mail est requise').trim().isEmail()
     .withMessage('L\'adresse e-mail doit être valide').matches(/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
     .withMessage('L\'adresse e-mail doit être valide').run(req);
 
     // Verifs et validation du passsword
-    await body('password').notEmpty().withMessage('Le mot de passe est requis').isLength({ min: 6 })
+    await body('password').notEmpty().withMessage('Le mot de passe est requis').trim().isLength({ min: 6 })
     .withMessage('Le mot de passe doit comporter au moins 6 caractères')
     .matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/)
     .withMessage('Le mot de passe doit contenir au moins une lettre majuscule, une lettre minuscule et un chiffre.')
@@ -113,12 +113,12 @@ const registerUser = asyncHandler(async (req, res) => {
 const login = asyncHandler(async (req, res) => {
 
     // Verifs du mail
-    await body('mail').notEmpty().withMessage('L\'adresse e-mail est requise').isEmail()
+    await body('mail').notEmpty().withMessage('L\'adresse e-mail est requise').trim().isEmail()
     .withMessage('L\'adresse e-mail doit être valide').matches(/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
     .withMessage('L\'adresse e-mail doit être valide').run(req);
 
     // Verifs du password
-    await body('password').notEmpty().withMessage('Le mot de passe est requis').isLength({ min: 6 })
+    await body('password').notEmpty().withMessage('Le mot de passe est requis').trim().isLength({ min: 6 })
     .withMessage('Le mot de passe doit comporter au moins 6 caractères')
     .matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/)
     .withMessage('Le mot de passe doit contenir au moins une lettre majuscule, une lettre minuscule et un chiffre.')
