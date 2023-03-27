@@ -136,11 +136,16 @@ const login = asyncHandler(async (req, res) => {
     
     // Vérifier si l'utilisateur existe
     const user = await User.findOne({ mail });
-    if (user.isBanned === 'true') {
+    if(user == null){
+        res.status(401);
+        throw new Error('Utilisateur introuvable.');
+    }
+    if(user.isBanned === 'true') {
         res.status(404);
         throw new Error('Vous avez été banni vous ne pouvez plus vous connecter');
     }
-    if (user && (await bcrypt.compare(password, user.password))) {
+    
+    if (user != null && (await bcrypt.compare(password, user.password))) {
         await User.findOneAndUpdate(
             { mail: mail },
             {
