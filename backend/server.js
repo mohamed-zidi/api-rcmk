@@ -21,7 +21,7 @@ io.on('connection', socket => {
         console.log(msg);
     })
 
-    socket.on('send_user',(user)=>{
+    socket.on('socket_user',(user)=>{
         console.log(user);
     })
 

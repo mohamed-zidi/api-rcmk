@@ -9,16 +9,21 @@ const io = require('../server');
 // @route GET /api/users
 // @access private
 const getAllUsers = asyncHandler(async (req, res) => {
-    User.find()
-        .then((user) => {
-            res.status(200).json(user);
-        })
-        .catch((error) => res.status(400).json({ error: "Aucun Utilisateurs" }));
+    const users = await User.find()
 
-        if(user){
-            io.emit("socket_user", (user));
-            console.log("socket user recup", user);
-        }
+    if (!users) {
+        res.status(400).json({ error: "Aucun Utilisateurs" });
+    }
+    else {
+        io.emit("socket_user", (user));
+        console.log("socket user recup", user);
+        res.status(200).json(users);
+    }
+    // .then((user) => {
+    //     res.status(200).json(user);
+    // })
+    // .catch((error) => res.status(400).json({ error: "Aucun Utilisateurs" }));
+
 })
 
 
