@@ -21,6 +21,10 @@ io.on('connection', socket => {
         console.log(msg);
     })
 
+    socket.on('socket_user',(user)=>{
+        console.log(user);
+    })
+
     socket.on('disconnect', ()=>{
         console.log('Un client est déconnecté.');
     })
