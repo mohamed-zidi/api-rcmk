@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const asyncHandler = require('express-async-handler');
 const User = require('../models/userModel');
 const { body, validationResult } = require('express-validator');
-const io = require('../server');
+const io = require('../utiles/socketIoClient');
 
 // @desc Recupérer tous les users et envoyer via websocket
 // @route GET /api/users
@@ -15,8 +15,9 @@ const getAllUsers = asyncHandler(async (req, res) => {
         res.status(400).json({ error: "Aucun Utilisateurs" });
     }
     else {
-        io.emit("socket_user", (user));
-        console.log("socket user recup", user);
+        // io.emit("socket_user", users);
+        io.emit("socket_user", users);
+        console.log("socket user recup", users);
         res.status(200).json(users);
     }
     // .then((user) => {

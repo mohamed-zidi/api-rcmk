@@ -16,16 +16,12 @@ module.exports = io;
 // Code pour créer une connexion WebSocket
 io.on('connection', socket => {
     console.log('Un client est connecté.');
-    
-    socket.on('send_message',(msg)=>{
+
+    socket.on('send_message', (msg) => {
         console.log(msg);
     })
 
-    socket.on('socket_user',(user)=>{
-        console.log(user);
-    })
-
-    socket.on('disconnect', ()=>{
+    socket.on('disconnect', () => {
         console.log('Un client est déconnecté.');
     })
 });
@@ -36,10 +32,10 @@ dbConnect();
 app.use(cors());
 app.use(helmet());
 app.use(express.json());
-app.use(express.urlencoded({extended:false}));
+app.use(express.urlencoded({ extended: false }));
 
-app.use('/api/users',require('./routes/usersRoute'));
-app.use('/api/messages',require('./routes/messagesRoute'));
+app.use('/api/users', require('./routes/usersRoute'));
+app.use('/api/messages', require('./routes/messagesRoute'));
 
 app.use(errorHandler)
 // app.listen(port,()=>{
@@ -49,4 +45,4 @@ app.use(errorHandler)
 // Code pour démarrer le serveur
 http.listen(port, () => {
     console.log(`server started on port ${port}`);
-  });
+});
