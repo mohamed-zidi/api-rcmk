@@ -37,10 +37,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use('/api/users', require('./routes/usersRoute'));
 app.use('/api/messages', require('./routes/messagesRoute'));
 
-app.use(errorHandler)
-// app.listen(port,()=>{
-//     console.log(`server started on port ${port}`);
-// });
+app.use(errorHandler);
 
 // Code pour démarrer le serveur
 http.listen(port, () => {

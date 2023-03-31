@@ -217,12 +217,13 @@ const generateToken = (id) => {
 // @access private
 
 const getMe = asyncHandler(async (req, res) => {
-    const { id, mail, pseudo } = await User.findById(req.user.id);
+    const { id, mail, pseudo, bio } = await User.findById(req.user.id);
 
     res.status(200).json({
         id,
         email: mail,
         pseudo,
+        bio: bio
     })
 })
 
